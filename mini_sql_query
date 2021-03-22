@@ -1,0 +1,17 @@
+SELECT orders.city
+    , count(distinct orders.order_id) as Total_Orders
+    , COUNT(DISTINCT IF(orders.cuisine_parent = 'Breakfast', order_id, NULL)) as Breakfast_Orders 
+    , COUNT(DISTINCT IF(orders.cuisine_parent = 'Breakfast', user_id, NULL)) as Breakfast_Users    
+    , round(avg(cust.Average_Basket), 2) as Average_Basket
+
+FROM `bi-2019-test.ad_hoc.orders_jan2021` orders
+left join (select city, sum(basket)/count(user_id) as Average_Basket
+            from `bi-2019-test.ad_hoc.orders_jan2021`
+            where user_id in (select user_id from `bi-2019-test.ad_hoc.orders_jan2021` where cuisine_parent = 'Breakfast' )
+            group by city) cust
+on orders.city = cust.city
+
+group by orders.city
+having Total_Orders > 500
+order by Breakfast_Orders desc
+LIMIT 10
